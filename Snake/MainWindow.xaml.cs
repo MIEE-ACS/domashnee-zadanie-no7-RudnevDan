@@ -32,7 +32,11 @@ namespace Snake
         int score;
         //таймер по которому 
         DispatcherTimer moveTimer;
-        
+        Bonus bonus;
+        int bonus_scale = 1;
+        DateTime Bonus_Start = DateTime.Now;
+        bool Bonus_Existence = false;
+
         //конструктор формы, выполняется при запуске программы
         public MainWindow()
         {
@@ -62,7 +66,15 @@ namespace Snake
             //обновляем положение яблока
             Canvas.SetTop(apple.image, apple.y);
             Canvas.SetLeft(apple.image, apple.x);
-            
+            //if (Bonus_Existence == true)
+            //{
+            //    canvas1.Children.Add(bonus.image);
+            //    Canvas.SetTop(bonus.image, bonus.y);
+            //    Canvas.SetLeft(bonus.image, bonus.x);
+            //}
+
+
+
             //обновляем количество очков
             lblScore.Content = String.Format("{0}000", score);
         }
@@ -102,7 +114,7 @@ namespace Snake
             if (head.x == apple.x && head.y == apple.y)
             {
                 //увеличиваем счет
-                score++;
+                score += bonus_scale;
                 //двигаем яблоко на новое место
                 apple.move();
                 // добавляем новый сегмент к змее
@@ -110,6 +122,35 @@ namespace Snake
                 canvas1.Children.Add(part.image);
                 snake.Add(part);
             }
+            var Bonus_Chanse = new Random(DateTime.Now.Millisecond);
+            if(Bonus_Chanse.Next(100) > 90 && Bonus_Existence == false)
+            {
+                canvas1.Children.Add(bonus.image);
+                bonus.move();
+                //canvas1.Children.Add
+                //canvas1.Children.Add(bonus.image);
+                //Canvas.SetTop(bonus.image, bonus.y);
+                //Canvas.SetLeft(bonus.image, bonus.x);
+                Bonus_Existence = true;
+            }
+
+            if (head.x == bonus.x && head.y == bonus.y)
+            {
+                bonus_scale = 10;
+                bonus.x = 40;
+                bonus.y = 0;
+                canvas1.Children.Remove(bonus.image);
+                Bonus_Start = DateTime.Now;
+                Bonus_label.Visibility = Visibility.Visible;
+            }
+
+            if(Bonus_label.Visibility == Visibility.Visible && DateTime.Now.Second - Bonus_Start.Second == 5)
+            {
+                bonus_scale = 1;
+                Bonus_Existence = false;
+
+            }
+
             //перерисовываем экран
             UpdateField();
         }
@@ -155,6 +196,7 @@ namespace Snake
             head = new Head();
             snake.Add(head);
             canvas1.Children.Add(head.image);
+            bonus = new Bonus(snake);
             
             //запускаем таймер
             moveTimer.Start();
@@ -317,6 +359,38 @@ namespace Snake
             {
                 x = m_next.x;
                 y = m_next.y;
+            }
+        }
+        public class Bonus : PositionedEntity
+        {
+            List<PositionedEntity> m_bonus;
+            public Bonus(List<PositionedEntity> s)
+                : base(0, 0, 40, 40, "pack://application:,,,/Resources/bonus.png")
+            {
+                m_bonus = s;
+                move();
+            }
+
+            public override void move()
+            {
+                Random rand = new Random();
+                do
+                {
+                    x = rand.Next(13) * 40 + 40;
+                    y = rand.Next(13) * 40 + 40;
+                    bool overlap = false;
+                    foreach (var p in m_bonus)
+                    {
+                        if (p.x == x && p.y == y)
+                        {
+                            overlap = true;
+                            break;
+                        }
+                    }
+                    if (!overlap)
+                        break;
+                } while (true);
+
             }
         }
     }
